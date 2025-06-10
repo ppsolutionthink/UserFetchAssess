@@ -1,6 +1,7 @@
 // API Configuration
 export const API_CONFIG = {
     BASE_URL: 'https://challenge.sunvoy.com',
+    API_BASE_URL: 'https://api.challenge.sunvoy.com',
     ENDPOINTS: {
         LOGIN: '/login',
         USERS: '/api/users',

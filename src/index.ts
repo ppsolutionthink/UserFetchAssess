@@ -200,10 +200,10 @@ class APIClient {
         throw new Error(`Login failed with status: ${response.statusCode}`);
     }
 
-   /**
-    * Fetch users from the API
-    * @returns 
-    */
+    /**
+      * Fetch users from the API
+      * @returns 
+      */
     async fetchUsers(): Promise<User[]> {
         console.log('Fetching users from API...');
         
@@ -219,6 +219,29 @@ class APIClient {
         }
         
         throw new Error(`Failed to fetch users. Status: ${response.statusCode}`);
+    }
+
+    /**
+      * Fetch authenticated user from the API
+      * @returns 
+      */
+    async fetchAuthenticatedUser(): Promise<User[]> {
+        console.log('Fetching authenticated user from API...');
+        
+        const response = await this.makeRequest('POST', API_CONFIG.ENDPOINTS.SETTINGS, {
+            'Accept': DEFAULT_HEADERS.ACCEPT_JSON,
+            'Origin': this.baseUrl,
+            'Referer': `${this.baseUrl}${API_CONFIG.ENDPOINTS.SETTINGS}`
+        });
+
+        console.log(response);
+
+        if (response.statusCode === 200) {
+            console.log('Authenticated user fetched successfully!');
+            return JSON.parse(response.body) as User[];
+        }
+        
+        throw new Error(`Failed to fetch authenticated user. Status: ${response.statusCode}`);
     }
 
     /**
@@ -245,6 +268,7 @@ async function main(): Promise<void> {
         const nonce = await client.getLoginNonce();
         await client.login(nonce, DEFAULT_CREDENTIALS.USERNAME, DEFAULT_CREDENTIALS.PASSWORD);
         const users = await client.fetchUsers();
+        await client.fetchAuthenticatedUser();
         await client.saveUsersToFile(users);
         console.log('Process completed successfully!');
     } catch (error) {
