@@ -1,5 +1,5 @@
 # UserFetchAssess
-Assessment for Sunvoy
+Assessment for Sunvoy 
 (A TypeScript application that fetches user data from an API with authentication and session management.)
 
 ## Features
@@ -10,11 +10,11 @@ Assessment for Sunvoy
 - File Export: Save user data to JSON files
 
 ## Scripts
-npm start - Run the application
+npm start - Run the application 
 npm run build - Compile TypeScript
 
 ## Configuration
-Edit src/constants.ts to modify:
+Edit `src/constants.ts` to modify:
 
 ## Output
 The application generates a users.json file containing all fetched user data:
