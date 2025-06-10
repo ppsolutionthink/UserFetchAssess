@@ -4,7 +4,9 @@
   "description": "Assessment for Sunvoy",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsc && node dist/index.js"
   },
   "repository": {
     "type": "git",
@@ -17,5 +19,9 @@
   "bugs": {
     "url": "https://github.com/ppsolutionthink/UserFetchAssess/issues"
   },
-  "homepage": "https://github.com/ppsolutionthink/UserFetchAssess#readme"
+  "homepage": "https://github.com/ppsolutionthink/UserFetchAssess#readme",
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.8.3"
+  }
 }
