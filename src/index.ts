@@ -1,6 +1,12 @@
 import * as https from 'https';
 import { URL } from 'url';
-
+import * as fs from 'fs';
+import {
+    API_CONFIG,
+    DEFAULT_CREDENTIALS,
+    DEFAULT_HEADERS,
+    FILE_CONFIG,
+} from './constants';
 interface HttpResponse {
     statusCode: number;
     headers: Record<string, string | string[] | undefined>;
@@ -73,7 +79,7 @@ class APIClient {
             
             // Build headers object with proper typing
             const requestHeaders: Record<string, string> = {
-                'User-Agent': 'Mozilla/5.0 (compatible; API Client)',
+                'User-Agent': DEFAULT_HEADERS.USER_AGENT,
                 ...headers
             };
 
@@ -125,13 +131,41 @@ class APIClient {
             req.end();
         });
     }
+
+        /**
+     * Extract nonce from HTML content
+     */
+    private extractNonce(html: string): string | null {
+        const nonceMatch = html.match(/name="nonce"\s+value="([^"]+)"/);
+        return nonceMatch ? nonceMatch[1] : null;
+    }
+
+    /**
+     * Get login nonce from the login page
+     */
+    async getLoginNonce(): Promise<string> {
+        console.log('Fetching login page to get nonce...');
+        
+        const response = await this.makeRequest('GET', '/login', {
+            'Accept': DEFAULT_HEADERS.ACCEPT_HTML
+        });
+        
+        const nonce = this.extractNonce(response.body);
+        if (!nonce) {
+            throw new Error('Failed to extract nonce from login page');
+        }
+        
+        console.log(`Extracted nonce: ${nonce}`);
+        return nonce;
+    }
+
 }
 
 /**
  * Main execution function
  */
 async function main(): Promise<void> {
-    const client = new APIClient('https://challenge.sunvoy.com');
+    const client = new APIClient(API_CONFIG.BASE_URL);
 
 }
 
