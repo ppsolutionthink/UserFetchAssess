@@ -159,6 +159,32 @@ class APIClient {
         return nonce;
     }
 
+        /**
+     * Perform login authentication
+     */
+    async login(nonce: string, username: string, password: string): Promise<boolean> {
+        console.log('Attempting login...');
+        
+        const formData = new URLSearchParams({
+            nonce: nonce,
+            username: username,
+            password: password
+        }).toString();
+
+        const response = await this.makeRequest('POST', '/login', {
+            'Content-Type': DEFAULT_HEADERS.CONTENT_TYPE_FORM,
+            'Origin': this.baseUrl,
+            'Referer': `${this.baseUrl}/login`
+        }, formData);
+
+        if (response.statusCode === 302) {
+            console.log('Login successful!');
+            return true;
+        }
+        
+        throw new Error(`Login failed with status: ${response.statusCode}`);
+    }
+
 }
 
 /**
@@ -167,6 +193,16 @@ class APIClient {
 async function main(): Promise<void> {
     const client = new APIClient(API_CONFIG.BASE_URL);
 
+        try {
+        const nonce = await client.getLoginNonce();
+        await client.login(nonce, DEFAULT_CREDENTIALS.USERNAME, DEFAULT_CREDENTIALS.PASSWORD);
+        
+        console.log('Process completed successfully!');
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+        console.error('Error:', errorMessage);
+        process.exit(1);
+    }
 }
 
 // Execute main function if this file is run directly
