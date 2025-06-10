@@ -171,10 +171,10 @@ class APIClient {
             password: password
         }).toString();
 
-        const response = await this.makeRequest('POST', '/login', {
+        const response = await this.makeRequest('POST', API_CONFIG.ENDPOINTS.LOGIN, {
             'Content-Type': DEFAULT_HEADERS.CONTENT_TYPE_FORM,
             'Origin': this.baseUrl,
-            'Referer': `${this.baseUrl}/login`
+            'Referer': `${this.baseUrl}${API_CONFIG.ENDPOINTS.LOGIN}`
         }, formData);
 
         if (response.statusCode === 302) {
@@ -183,6 +183,26 @@ class APIClient {
         }
         
         throw new Error(`Login failed with status: ${response.statusCode}`);
+    }
+
+        /**
+     * Fetch users from the API
+     */
+    async fetchUsers(): Promise<User[]> {
+        console.log('Fetching users from API...');
+        
+        const response = await this.makeRequest('POST', API_CONFIG.ENDPOINTS.USERS, {
+            'Accept': '*/*',
+            'Origin': this.baseUrl,
+            'Referer': `${this.baseUrl}/list`
+        });
+
+        if (response.statusCode === 200) {
+            console.log('Users fetched successfully!');
+            return JSON.parse(response.body) as User[];
+        }
+        
+        throw new Error(`Failed to fetch users. Status: ${response.statusCode}`);
     }
 
 }
@@ -196,7 +216,7 @@ async function main(): Promise<void> {
         try {
         const nonce = await client.getLoginNonce();
         await client.login(nonce, DEFAULT_CREDENTIALS.USERNAME, DEFAULT_CREDENTIALS.PASSWORD);
-        
+        const users = await client.fetchUsers();
         console.log('Process completed successfully!');
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
