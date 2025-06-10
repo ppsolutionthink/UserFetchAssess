@@ -1,5 +1,6 @@
 # UserFetchAssess
 Assessment for Sunvoy 
+
 (A TypeScript application that fetches user data from an API with authentication and session management.)
 
 ## Features
@@ -11,6 +12,7 @@ Assessment for Sunvoy
 
 ## Scripts
 npm start - Run the application 
+
 npm run build - Compile TypeScript
 
 ## Configuration
