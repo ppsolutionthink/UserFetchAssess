@@ -10,8 +10,8 @@ Assessment for Sunvoy
 - File Export: Save user data to JSON files
 
 ## Scripts
+`npm run build` - Compile TypeScript   
 `npm start` - Run the application 
-`npm run build` - Compile TypeScript
 
 ## Configuration
 Edit `src/constants.ts` to modify:
@@ -31,4 +31,5 @@ The application generates a users.json file containing all fetched user data:
 ```
 
 ## Screen Recording
- [**Watch Video**](./data/ScreenRecording.mp4)
+ [**Watch Video**](https://drive.google.com/file/d/1ssUJO5shuTPAsj4878TMMS2KbqWN6Xyb/view)
+ [**Raw Data at Repository**](./data/ScreenRecording.mp4)
