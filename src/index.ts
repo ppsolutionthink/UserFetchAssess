@@ -36,6 +36,8 @@ class APIClient {
 
     /**
      * Parse cookies from HTTP headers
+     * @param headers 
+     * @returns 
      */
     private parseCookies(headers: Record<string, string | string[] | undefined>): void {
         const setCookieHeaders = headers['set-cookie'];
@@ -58,6 +60,7 @@ class APIClient {
 
     /**
      * Format cookies for HTTP request headers
+     * @returns 
      */
     private formatCookies(): string {
         return Array.from(this.cookies.entries())
@@ -67,6 +70,11 @@ class APIClient {
 
     /**
      * Make HTTP request
+     * @param method 
+     * @param path 
+     * @param headers 
+     * @param body 
+     * @returns 
      */
     private async makeRequest(
         method: string, 
@@ -132,8 +140,10 @@ class APIClient {
         });
     }
 
-        /**
+    /**
      * Extract nonce from HTML content
+     * @param html 
+     * @returns 
      */
     private extractNonce(html: string): string | null {
         const nonceMatch = html.match(/name="nonce"\s+value="([^"]+)"/);
@@ -142,11 +152,12 @@ class APIClient {
 
     /**
      * Get login nonce from the login page
+     * @returns 
      */
     async getLoginNonce(): Promise<string> {
         console.log('Fetching login page to get nonce...');
         
-        const response = await this.makeRequest('GET', '/login', {
+        const response = await this.makeRequest('GET', API_CONFIG.ENDPOINTS.LOGIN, {
             'Accept': DEFAULT_HEADERS.ACCEPT_HTML
         });
         
@@ -159,8 +170,12 @@ class APIClient {
         return nonce;
     }
 
-        /**
+    /**
      * Perform login authentication
+     * @param nonce 
+     * @param username 
+     * @param password 
+     * @returns 
      */
     async login(nonce: string, username: string, password: string): Promise<boolean> {
         console.log('Attempting login...');
@@ -185,16 +200,17 @@ class APIClient {
         throw new Error(`Login failed with status: ${response.statusCode}`);
     }
 
-        /**
-     * Fetch users from the API
-     */
+   /**
+    * Fetch users from the API
+    * @returns 
+    */
     async fetchUsers(): Promise<User[]> {
         console.log('Fetching users from API...');
         
         const response = await this.makeRequest('POST', API_CONFIG.ENDPOINTS.USERS, {
-            'Accept': '*/*',
+            'Accept': DEFAULT_HEADERS.ACCEPT_JSON,
             'Origin': this.baseUrl,
-            'Referer': `${this.baseUrl}/list`
+            'Referer': `${this.baseUrl}${API_CONFIG.ENDPOINTS.LIST}`
         });
 
         if (response.statusCode === 200) {
@@ -203,6 +219,18 @@ class APIClient {
         }
         
         throw new Error(`Failed to fetch users. Status: ${response.statusCode}`);
+    }
+
+    /**
+     * Save users data to a JSON file
+     * @param users 
+     * @param filename 
+     */
+    async saveUsersToFile(users: User[], filename: string = FILE_CONFIG.DEFAULT_OUTPUT_FILENAME): Promise<void> {
+        const prettyJson = JSON.stringify(users, null, FILE_CONFIG.JSON_INDENT);
+        fs.writeFileSync(filename, prettyJson, FILE_CONFIG.ENCODING);
+        console.log(`Users saved to ${filename}`);
+        console.log(`Total users: ${users.length}`);
     }
 
 }
@@ -217,6 +245,7 @@ async function main(): Promise<void> {
         const nonce = await client.getLoginNonce();
         await client.login(nonce, DEFAULT_CREDENTIALS.USERNAME, DEFAULT_CREDENTIALS.PASSWORD);
         const users = await client.fetchUsers();
+        await client.saveUsersToFile(users);
         console.log('Process completed successfully!');
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
