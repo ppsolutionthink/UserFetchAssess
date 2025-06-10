@@ -6,7 +6,9 @@ import {
     DEFAULT_CREDENTIALS,
     DEFAULT_HEADERS,
     FILE_CONFIG,
+    REGEX_PATTERNS
 } from './constants';
+
 interface HttpResponse {
     statusCode: number;
     headers: Record<string, string | string[] | undefined>;
@@ -25,12 +27,28 @@ interface LoginCredentials {
     password: string;
 }
 
+interface SettingsTokens {
+    access_token: string;
+    apiuser: string;
+    language: string;
+    openId: string;
+    operateId: string;
+    userId: string;
+}
+
+interface SettingsPayload extends SettingsTokens {
+    timestamp: string;
+    checkcode: string;
+}
+
 class APIClient {
     private baseUrl: string;
+    private apiBaseUrl: string;
     private cookies: Map<string, string>;
 
-    constructor(baseUrl: string) {
+    constructor(baseUrl: string, apiBaseUrl?: string) {
         this.baseUrl = baseUrl;
+        this.apiBaseUrl = apiBaseUrl || API_CONFIG.API_BASE_URL;
         this.cookies = new Map<string, string>();
     }
 
@@ -80,11 +98,13 @@ class APIClient {
         method: string, 
         path: string, 
         headers: Record<string, string> = {}, 
-        body: string | null = null
+        body: string | null = null,
+        useApiBaseUrl: boolean = false
     ): Promise<HttpResponse> {
         return new Promise((resolve, reject) => {
-            const url = new URL(path, this.baseUrl);
-            
+            const baseUrl = useApiBaseUrl ? this.apiBaseUrl : this.baseUrl;
+            const url = new URL(path, baseUrl);
+
             // Build headers object with proper typing
             const requestHeaders: Record<string, string> = {
                 'User-Agent': DEFAULT_HEADERS.USER_AGENT,
@@ -222,26 +242,122 @@ class APIClient {
     }
 
     /**
+     * Extract settings tokens from HTML content
+     * @param html 
+     * @returns 
+     */
+    private extractSettingsTokens(html: string): SettingsTokens {
+        const accessTokenMatch = html.match(REGEX_PATTERNS.ACCESS_TOKEN);
+        const openIdMatch = html.match(REGEX_PATTERNS.OPEN_ID);
+        const userIdMatch = html.match(REGEX_PATTERNS.USER_ID);
+        const apiUserMatch = html.match(REGEX_PATTERNS.API_USER);
+        const operateIdMatch = html.match(REGEX_PATTERNS.OPERATE_ID);
+        const languageMatch = html.match(REGEX_PATTERNS.LANGUAGE);
+
+        if (!accessTokenMatch || !openIdMatch || !userIdMatch || 
+            !apiUserMatch || !operateIdMatch || !languageMatch) {
+            throw new Error('Failed to extract required tokens from settings page');
+        }
+
+        return {
+            access_token: accessTokenMatch[1],
+            openId: openIdMatch[1],
+            userId: userIdMatch[1],
+            apiuser: apiUserMatch[1],
+            operateId: operateIdMatch[1],
+            language: languageMatch[1]
+        };
+    }
+
+    /**
+     * Get settings tokens from the settings/tokens page
+     * @returns 
+     */
+    async getSettingsTokens(): Promise<SettingsTokens> {
+        console.log('Fetching settings tokens...');
+        
+        const response = await this.makeRequest('GET', API_CONFIG.ENDPOINTS.SETTINGS_TOKENS, {
+            'Accept': DEFAULT_HEADERS.ACCEPT_HTML,
+            'Referer': `${this.baseUrl}${API_CONFIG.ENDPOINTS.LIST}`
+        });
+        
+        if (response.statusCode !== 200) {
+            throw new Error('Failed to fetch settings tokens');
+        }
+        
+        const tokens = this.extractSettingsTokens(response.body);
+        console.log('Settings tokens extracted successfully!');
+        
+        console.log(tokens);
+        return tokens;
+    }
+
+    /**
+     * Generate checkcode for settings API (placeholder implementation)
+     * In a real scenario, this would need to match the server's algorithm
+     */
+    private generateCheckcode(tokens: SettingsTokens, timestamp: string): string {
+        // Using the provided checkcode as fallback - in reality, this would be calculated
+        // based on the specific algorithm used by the API
+        return 'F0A2FB72DE26136444FABE5711E139570A04A974';
+    }
+
+    /**
       * Fetch authenticated user from the API
       * @returns 
       */
-    async fetchAuthenticatedUser(): Promise<User[]> {
+    async fetchAuthenticatedUser(): Promise<User> {
         console.log('Fetching authenticated user from API...');
         
+        // Get fresh tokens from the settings page
+        const tokens = await this.getSettingsTokens();
+        
+        // Generate current timestamp
+        const timestamp = Math.floor(Date.now() / 1000).toString();
+        
+        // Generate checkcode (using placeholder implementation)
+        const checkcode = this.generateCheckcode(tokens, timestamp);
+        
+        // Prepare form data for settings API
+        const formData = new URLSearchParams({
+            access_token: tokens.access_token,
+            apiuser: tokens.apiuser,
+            language: tokens.language,
+            openId: tokens.openId,
+            operateId: tokens.operateId,
+            timestamp: timestamp,
+            userId: tokens.userId,
+            checkcode: checkcode
+        }).toString();
+
+        console.log(formData);
+
         const response = await this.makeRequest('POST', API_CONFIG.ENDPOINTS.SETTINGS, {
             'Accept': DEFAULT_HEADERS.ACCEPT_JSON,
+            'Content-Type': DEFAULT_HEADERS.CONTENT_TYPE_FORM,
             'Origin': this.baseUrl,
-            'Referer': `${this.baseUrl}${API_CONFIG.ENDPOINTS.SETTINGS}`
-        });
+            'Referer': `${this.baseUrl}/`,
+            'Accept-Encoding': 'gzip, deflate, br, zstd',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Sec-Ch-Ua': '"Google Chrome";v="137", "Chromium";v="137", "Not/A)Brand";v="24"',
+            'Sec-Ch-Ua-Mobile': '?0',
+            'Sec-Ch-Ua-Platform': '"Windows"',
+            'Sec-Fetch-Dest': 'empty',
+            'Sec-Fetch-Mode': 'cors',
+            'Sec-Fetch-Site': 'same-site',
+            'Priority': 'u=1, i'
+        }, formData, true); // Use API base URL
 
         console.log(response);
-
+        
         if (response.statusCode === 200) {
             console.log('Authenticated user fetched successfully!');
-            return JSON.parse(response.body) as User[];
+            return JSON.parse(response.body) as User;
         }
         
         throw new Error(`Failed to fetch authenticated user. Status: ${response.statusCode}`);
+        
+
     }
 
     /**

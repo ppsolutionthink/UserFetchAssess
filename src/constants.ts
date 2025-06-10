@@ -5,6 +5,7 @@ export const API_CONFIG = {
     ENDPOINTS: {
         LOGIN: '/login',
         USERS: '/api/users',
+        SETTINGS_TOKENS: '/settings/tokens',
         SETTINGS: '/api/settings',
         LIST: 'list',
     }
@@ -29,4 +30,18 @@ export const FILE_CONFIG = {
     DEFAULT_OUTPUT_FILENAME: 'users.json',
     ENCODING: 'utf8' as const,
     JSON_INDENT: 4
+} as const;
+
+// Regex Patterns
+export const REGEX_PATTERNS = {
+    NONCE: /name="nonce"\s+value="([^"]+)"/,
+    COOKIE_SPLIT: /[;,]/,
+    EMAIL: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+    // Settings token extraction patterns
+    ACCESS_TOKEN: /id="access_token"\s+value="([^"]+)"/,
+    OPEN_ID: /id="openId"\s+value="([^"]+)"/,
+    USER_ID: /id="userId"\s+value="([^"]+)"/,
+    API_USER: /id="apiuser"\s+value="([^"]+)"/,
+    OPERATE_ID: /id="operateId"\s+value="([^"]+)"/,
+    LANGUAGE: /id="language"\s+value="([^"]+)"/
 } as const;
